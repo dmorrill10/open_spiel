@@ -18,6 +18,11 @@
 # The following should be easy to setup as a submodule:
 # https://git-scm.com/docs/git-submodule
 
+die() {
+  echo "$*" 1>&2
+  exit 1
+}
+
 set -e  # exit when any command fails
 set -x
 
@@ -62,20 +67,25 @@ fi
 # Optional dependencies.
 DIR="open_spiel/games/hanabi/hanabi-learning-environment"
 if [[ ${BUILD_WITH_HANABI:-"ON"} == "ON" ]] && [[ ! -d ${DIR} ]]; then
-  git clone -b 'master' --single-branch --depth 1 https://github.com/deepmind/hanabi-learning-environment.git ${DIR}
+  git clone -b 'master' --single-branch --depth 15 https://github.com/deepmind/hanabi-learning-environment.git ${DIR}
+  # We checkout a specific CL to prevent future breakage due to changes upstream
+  pushd ${DIR}
+  git checkout  'b31c973'
+  popd
 fi
 
-# The official https://github.com/ethansbrown/acpc was outdated so we forked it and updated it with
-# the latest version from http://www.computerpokercompetition.org/downloads/code/competition_server/project_acpc_server_v1.0.42.tar.bz2
+# This Github repository contains the raw code from the ACPC server
+# http://www.computerpokercompetition.org/downloads/code/competition_server/project_acpc_server_v1.0.42.tar.bz2
+# with the code compiled as C++ within a namespace.
 DIR="open_spiel/games/universal_poker/acpc"
 if [[ ${BUILD_WITH_ACPC:-"ON"} == "ON" ]] && [[ ! -d ${DIR} ]]; then
-  git clone -b 'master' --single-branch --depth 1  https://github.com/dennisjay/acpc.git ${DIR}
+  git clone -b 'master' --single-branch --depth 1  https://github.com/jblespiau/project_acpc_server.git ${DIR}
 fi
 
 
 # 2. Install other required system-wide dependencies
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  EXT_DEPS="virtualenv cmake python3 python3-dev python3-pip python3-setuptools python3-wheel"
+  EXT_DEPS="virtualenv clang cmake python3 python3-dev python3-pip python3-setuptools python3-wheel"
   APT_GET=`which apt-get`
   if [ "$APT_GET" = "" ]
   then
@@ -101,8 +111,9 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${OS_PYTHON_VERSION} 10
   fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then  # Mac OSX
-  [[ -x "$(type python3)" ]] || brew install python3 || echo "** Warning: failed 'brew install python3' -- continuing"
-  [[ -x "$(type g++-7)" ]] || brew install gcc@7 || echo "** Warning: failed 'brew install gcc@7' -- continuing"
+  [[ -x `which realpath` ]] || brew install coreutils || echo "** Warning: failed 'brew install coreutils' -- continuing"
+  [[ -x `which python3` ]] || brew install python3 || echo "** Warning: failed 'brew install python3' -- continuing"
+  [[ -x `which clang++` ]] || die "Clang not found. Please install or upgrade XCode and run the command-line developer tools"
   curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
   python3 get-pip.py
   pip3 install virtualenv

@@ -77,6 +77,8 @@ class Calculator(object):
     self.info_state_prob = None
     self.info_state_cf_prob = None
     self.info_state_chance_prob = None
+    # best_responder[i] is a best response to the provided policy for player i.
+    # It is therefore a policy for player (1-i).
     self._best_responder = {0: None, 1: None}
     self._all_states = None
 
@@ -115,7 +117,7 @@ class Calculator(object):
 
     is_chance = state.is_chance_node()
     if not is_chance:
-      key = (state.current_player(), state.information_state())
+      key = (state.current_player(), state.information_state_string())
       counterfactual_reach_prob = (
           np.prod(reach_probabilities[:current_player]) *
           np.prod(reach_probabilities[current_player + 1:]))
@@ -143,7 +145,9 @@ class Calculator(object):
     """Computes action values per state for the player.
 
     Args:
-      player: The id of the player 0 <= player < game.num_players().
+      player: The id of the player (0 <= player < game.num_players()). This
+        player will play `player_policy`, while the opponent will play a best
+        response.
       player_policy: A `policy.Policy` object.
       info_states: A list of info state strings.
 
@@ -154,7 +158,7 @@ class Calculator(object):
     opponent = 1 - player
 
     def best_response_policy(state):
-      infostate = state.information_state(opponent)
+      infostate = state.information_state_string(opponent)
       action = best_response_actions[infostate]
       return [(action, 1.0)]
 
@@ -177,7 +181,7 @@ class Calculator(object):
             include_terminals=False,
             include_chance_states=False)
         self._state_to_information_state = {
-            state: self._all_states[state].information_state()
+            state: self._all_states[state].information_state_string()
             for state in self._all_states
         }
       tabular_policy = policy_utils.policy_to_dict(

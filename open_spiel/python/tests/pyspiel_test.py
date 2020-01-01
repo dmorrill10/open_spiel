@@ -36,12 +36,16 @@ class PyspielTest(absltest.TestCase):
         "backgammon",
         "blotto",
         "breakthrough",
+        "bridge",
         "bridge_uncontested_bidding",
         "catch",
         "chess",
+        "cliff_walking",
         "coin_game",
         "connect_four",
         "coop_box_pushing",
+        "coop_to_1p",
+        "deep_sea",
         "first_sealed_auction",
         "go",
         "goofspiel",
@@ -63,6 +67,7 @@ class PyspielTest(absltest.TestCase):
         "matrix_shapleys_game",
         "misere",
         "negotiation",
+        "normal_form_extensive_game",
         "oshi_zumo",
         "oware",
         "pentago",
@@ -76,6 +81,7 @@ class PyspielTest(absltest.TestCase):
         "turn_based_simultaneous_game",
         "y",
     ])
+
     if os.environ.get("BUILD_WITH_HANABI", "OFF") == "ON":
       expected.add("hanabi")
     if os.environ.get("BUILD_WITH_ACPC", "OFF") == "ON":
@@ -102,6 +108,7 @@ class PyspielTest(absltest.TestCase):
         # Only add games here if there is no sensible default for a parameter.
         "misere",
         "turn_based_simultaneous_game",
+        "normal_form_extensive_game",
     ]
     self.assertCountEqual(games_with_mandatory_parameters, expected)
 
@@ -136,6 +143,10 @@ class PyspielTest(absltest.TestCase):
     state.apply_action(2)
     self.assertEqual(state.is_chance_node(), False)
     self.assertEqual(state.legal_actions(), [0, 1])
+    sampler = pyspiel.UniformProbabilitySampler(0., 1.)
+    clone = state.resample_from_infostate(1, sampler)
+    self.assertEqual(
+        clone.information_state_string(1), state.information_state_string(1))
 
   def test_tic_tac_toe(self):
     game = pyspiel.load_game("tic_tac_toe")
