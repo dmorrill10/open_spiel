@@ -91,7 +91,7 @@ class TinyBridgeGame2p : public Game {
   std::shared_ptr<const Game> Clone() const override {
     return std::shared_ptr<const Game>(new TinyBridgeGame2p(*this));
   }
-  std::vector<int> InformationStateTensorShape() const {
+  std::vector<int> InformationStateTensorShape() const override {
     return {(is_abstracted_ ? kNumAbstractHands : kDeckSize) +
             kNumActions2p * 2};
   }
@@ -118,7 +118,7 @@ class TinyBridgeGame4p : public Game {
   std::shared_ptr<const Game> Clone() const override {
     return std::shared_ptr<const Game>(new TinyBridgeGame4p(*this));
   }
-  std::vector<int> InformationStateTensorShape() const {
+  std::vector<int> InformationStateTensorShape() const override {
     return {kDeckSize + (kNumBids * 3 + 1) * NumPlayers()};
   }
   std::vector<int> ObservationTensorShape() const override {
@@ -202,7 +202,7 @@ class TinyBridgePlayState : public State {
         holder_(holder) {}
   TinyBridgePlayState(const TinyBridgePlayState&) = default;
 
-  Player CurrentPlayer() const { return CurrentHand() % 2; }
+  Player CurrentPlayer() const override { return CurrentHand() % 2; }
   Seat CurrentHand() const;
 
   std::string ActionToString(Player player, Action action_id) const override;
@@ -239,9 +239,13 @@ int Score_p0(std::array<Seat, kDeckSize> holder,
              const TinyBridgeAuctionState::AuctionState& state);
 
 // For the two-player (purely cooperative) case, the expected score for
-// declaring side in the specified contract.
+// declaring side in the specified contract. Uses a cache of values.
 double Score_2p(Action hand0, Action hand1,
                 const TinyBridgeAuctionState::AuctionState& state);
+
+// Non-caching version of `Score_2p`.
+double Score_2p_(Action hand0, Action hand1,
+                 const TinyBridgeAuctionState::AuctionState& state);
 
 }  // namespace tiny_bridge
 }  // namespace open_spiel
